@@ -104,6 +104,7 @@ runs:
         mkdir -p ${{ inputs.action_path }} && cp -R ${{ github.workspace }}/_site/. ${{ inputs.action_path }}/
   
     - uses: ikalnytskyi/action-setup-postgres@v7
+      if: env.RERUN_RUNNER == 'false'
       id: postgres
       with:
         username: yoda
@@ -114,6 +115,7 @@ runs:
         ssl: true
 
     - name: 🪂 Test postgres
+      if: env.RERUN_RUNNER == 'false'
       env:
         CONNECTION_URI: ${{ steps.postgres.outputs.connection-uri }}
         SERVICE_NAME: ${{ steps.postgres.outputs.service-name }}
@@ -136,8 +138,10 @@ runs:
         #cp ${{ github.workspace }}/.github/entrypoint/test.py . && python3 -m pytest -vv test.py
         #python ${{ github.workspace }}/web_programming/cc_exchanges.py
         
+        bash user_data/ft_client/test_client/feed.sh
+        
     - name: 🚀 Initiate Feed Container
-      if: runner.os != 'Windows'
+      if: env.RERUN_RUNNER == 'true'
       uses: devcontainers/ci@v0.3
       id: set_output
       with:
@@ -145,7 +149,7 @@ runs:
         skipContainerUserIdUpdate: true
         imageName: ${{ inputs.image_name }}
         configFile: _site/.devcontainer.json
-        runCmd: bash user_data/ft_client/test_client/feed.sh
+        #runCmd: bash user_data/ft_client/test_client/feed.sh
         push: ${{ env.RERUN_RUNNER == 'true' && 'always' || 'never' }}
         env: |
           ID=${{ env.ID }}
@@ -155,6 +159,7 @@ runs:
           TARGET_REPOSITORY=${{ env.TARGET_REPOSITORY }}
 
     - name: 🪂 Remove existing images
+      if: env.RERUN_RUNNER == 'true'
       id: variables
       shell: bash
       run: |
